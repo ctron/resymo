@@ -107,12 +107,14 @@ async fn main() -> anyhow::Result<ExitCode> {
     log::info!(
         "  TLS - key: {}",
         cli.tls_key
+            .as_ref()
             .map(|p| p.display().to_string())
             .unwrap_or_else(|| "<none>".to_string())
     );
     log::info!(
         "  TLS - certificate: {}",
         cli.tls_certificate
+            .as_ref()
             .map(|p| p.display().to_string())
             .unwrap_or_else(|| "<none>".to_string())
     );
