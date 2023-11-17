@@ -5,6 +5,7 @@ use serde_json::json;
 use std::collections::{BTreeMap, HashMap};
 
 pub mod disk_free;
+pub mod load_avg;
 
 #[async_trait]
 pub trait Collector: Send + Sync {

@@ -1,4 +1,4 @@
-use crate::collector::{disk_free, Manager};
+use crate::collector::{disk_free, load_avg, Manager};
 use actix_tls::accept::openssl::reexports::SslAcceptor;
 use actix_web::middleware::Logger;
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
@@ -99,7 +99,9 @@ async fn main() -> anyhow::Result<ExitCode> {
 
     init_logger(&cli);
 
-    let manager = Manager::new().register("disk_free", disk_free::Collector::new());
+    let manager = Manager::new()
+        .register("disk_free", disk_free::Collector::new())
+        .register("load_avg", load_avg::Collector);
     let manager = web::Data::new(manager);
 
     log::info!("Starting agent");
