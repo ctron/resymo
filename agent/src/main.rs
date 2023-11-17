@@ -101,6 +101,19 @@ async fn main() -> anyhow::Result<ExitCode> {
     let manager = web::Data::new(manager);
 
     log::info!("Starting agent");
+    log::info!("  Binding on: {}", cli.bind_addr);
+    log::info!(
+        "  TLS - key: {}",
+        cli.tls_key
+            .map(|p| p.display().to_string())
+            .unwrap_or_else(|| "<none>".to_string())
+    );
+    log::info!(
+        "  TLS - certificate: {}",
+        cli.tls_certificate
+            .map(|p| p.display().to_string())
+            .unwrap_or_else(|| "<none>".to_string())
+    );
 
     let auth = cli.token.map(|token| {
         let token = Arc::new(token);
