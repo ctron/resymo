@@ -1,10 +1,13 @@
 use crate::collector::{disk_free, Manager};
+use actix_tls::accept::openssl::reexports::SslAcceptor;
 use actix_web::middleware::Logger;
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 use actix_web_extras::middleware::Condition;
 use actix_web_httpauth::extractors::{bearer, AuthenticationError};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use clap::Parser;
+use openssl::ssl::{SslFiletype, SslMethod};
+use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::Arc;
 
@@ -31,6 +34,14 @@ pub struct Cli {
     /// Be more verbose
     #[arg(short, long, env, conflicts_with = "quiet", action = clap::ArgAction::Count)]
     verbose: u8,
+
+    /// A TLS certificate
+    #[cfg(feature = "openssl")]
+    tls_certificate: Option<PathBuf>,
+
+    /// A TLS key
+    #[cfg(feature = "openssl")]
+    tls_key: Option<PathBuf>,
 }
 
 #[get("/")]
@@ -120,7 +131,7 @@ async fn main() -> anyhow::Result<ExitCode> {
         }
     }
 
-    HttpServer::new(move || {
+    let server = HttpServer::new(move || {
         App::new()
             .app_data(manager.clone())
             .wrap(Condition::from_option(auth.clone()))
@@ -129,10 +140,27 @@ async fn main() -> anyhow::Result<ExitCode> {
             .service(collect)
             .service(collect_all)
     })
-    .workers(1)
-    .bind(cli.bind_addr)?
-    .run()
-    .await?;
+    .workers(1);
+
+    let server = match (cli.tls_key, cli.tls_certificate) {
+        (Some(key), Some(cert)) => {
+            #[cfg(feature = "openssl")]
+            {
+                let mut acceptor = SslAcceptor::mozilla_modern_v5(SslMethod::tls_server())?;
+                acceptor.set_certificate_chain_file(cert)?;
+                acceptor.set_private_key_file(key, SslFiletype::PEM)?;
+                // let acceptor = actix_tls::accept::openssl::Acceptor::new()
+                server.bind_openssl(cli.bind_addr, acceptor)?.run()
+            }
+        }
+        (None, None) => server.bind(cli.bind_addr)?.run(),
+        _ => {
+            log::error!("Enabling TLS requires both --tls-key and --tls-certificate");
+            return Ok(ExitCode::FAILURE);
+        }
+    };
+
+    server.await?;
 
     Ok(ExitCode::SUCCESS)
 }

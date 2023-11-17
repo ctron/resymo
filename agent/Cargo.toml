@@ -20,3 +20,17 @@ actix-web = "4"
 actix-web-extras = "0.1"
 actix-web-httpauth = "0.8"
 
+actix-tls = { version = "3", optional = true, features = ["openssl"] }
+openssl = { version = "0.10", optional = true, features = ["v111"] }
+
+[features]
+default = [
+    "openssl"
+]
+
+openssl = [
+    "dep:openssl",
+    "actix-web/openssl",
+    "actix-tls",
+    "actix-tls/openssl"
+]
