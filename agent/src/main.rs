@@ -37,10 +37,12 @@ pub struct Cli {
 
     /// A TLS certificate
     #[cfg(feature = "openssl")]
+    #[arg(long, env)]
     tls_certificate: Option<PathBuf>,
 
     /// A TLS key
     #[cfg(feature = "openssl")]
+    #[arg(long, env)]
     tls_key: Option<PathBuf>,
 }
 
