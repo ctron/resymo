@@ -1,0 +1,13 @@
+[Unit]
+Description=ReSyMo Agent
+After=network.target
+Wants=network.target
+
+[Service]
+Type=exec
+ExecStart=/usr/sbin/resymo-agent
+Restart=on-failure
+EnvironmentFile=/etc/resymo/agent.env
+
+[Install]
+WantedBy=multi-user.target
