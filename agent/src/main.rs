@@ -1,32 +1,25 @@
 use crate::collector::{disk_free, load_avg, Manager};
-use actix_tls::accept::openssl::reexports::SslAcceptor;
-use actix_web::middleware::Logger;
-use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
-use actix_web_extras::middleware::Condition;
-use actix_web_httpauth::extractors::{bearer, AuthenticationError};
-use actix_web_httpauth::middleware::HttpAuthentication;
+use crate::config::Config;
+use anyhow::Context;
 use clap::Parser;
-use openssl::ssl::{SslFiletype, SslMethod};
+use std::future::Future;
 use std::path::PathBuf;
+use std::pin::Pin;
 use std::process::ExitCode;
 use std::sync::Arc;
+use tokio::signal;
+
+#[cfg(unix)]
+use tokio::signal::unix::{signal, SignalKind};
 
 mod collector;
+mod config;
+mod uplink;
+
+const CONFIG_FILE: &str = "resymo/agent.yaml";
 
 #[derive(Clone, Debug, clap::Parser)]
 pub struct Cli {
-    /// Bind address
-    #[arg(short, long, env, default_value = "[::1]:4242")]
-    bind_addr: String,
-
-    /// Remote access token
-    #[arg(short, long, env)]
-    token: Option<String>,
-
-    /// Allow disabling the authentication
-    #[arg(long, env)]
-    disable_authentication: bool,
-
     /// Be quiet
     #[arg(short, long, env)]
     quiet: bool,
@@ -35,40 +28,17 @@ pub struct Cli {
     #[arg(short, long, env, conflicts_with = "quiet", action = clap::ArgAction::Count)]
     verbose: u8,
 
-    /// A TLS certificate
-    #[cfg(feature = "openssl")]
-    #[arg(long, env)]
-    tls_certificate: Option<PathBuf>,
-
-    /// A TLS key
-    #[cfg(feature = "openssl")]
-    #[arg(long, env)]
-    tls_key: Option<PathBuf>,
+    /// Path to the configuration file
+    #[arg(short, long, env, default_value = config_file())]
+    config: PathBuf,
 }
 
-#[get("/")]
-async fn index() -> impl Responder {
-    ""
-}
-
-#[get("/api/v1/collect")]
-async fn collect_all(manager: web::Data<Manager>) -> actix_web::Result<HttpResponse> {
-    Ok(HttpResponse::Ok().json(manager.collect_all().await?))
-}
-
-#[get("/api/v1/collect/{collector}")]
-async fn collect(
-    path: web::Path<String>,
-    manager: web::Data<Manager>,
-) -> actix_web::Result<HttpResponse> {
-    let collector = path.into_inner();
-
-    log::info!("Collecting: {collector}");
-
-    Ok(match manager.collect(&collector).await? {
-        Some(result) => HttpResponse::Ok().json(result),
-        None => HttpResponse::NotFound().finish(),
-    })
+fn config_file() -> String {
+    dirs::config_dir()
+        .unwrap_or_else(|| PathBuf::from("/etc"))
+        .join(CONFIG_FILE)
+        .display()
+        .to_string()
 }
 
 fn init_logger(cli: &Cli) {
@@ -99,87 +69,47 @@ async fn main() -> anyhow::Result<ExitCode> {
 
     init_logger(&cli);
 
-    let manager = Manager::new()
-        .register("disk_free", disk_free::Collector::new())
-        .register("load_avg", load_avg::Collector);
-    let manager = web::Data::new(manager);
+    let config: Config = serde_yaml::from_reader(
+        std::fs::File::open(&cli.config)
+            .with_context(|| format!("Reading configuration file: '{}'", cli.config.display()))?,
+    )?;
+
+    let manager = Arc::new(
+        Manager::new()
+            .register("disk_free", disk_free::Collector::new())
+            .register("load_avg", load_avg::Collector),
+    );
 
     log::info!("Starting agent");
-    log::info!("  Binding on: {}", cli.bind_addr);
-    log::info!(
-        "  TLS - key: {}",
-        cli.tls_key
-            .as_ref()
-            .map(|p| p.display().to_string())
-            .unwrap_or_else(|| "<none>".to_string())
-    );
-    log::info!(
-        "  TLS - certificate: {}",
-        cli.tls_certificate
-            .as_ref()
-            .map(|p| p.display().to_string())
-            .unwrap_or_else(|| "<none>".to_string())
-    );
 
-    let auth = cli.token.map(|token| {
-        let token = Arc::new(token);
-        HttpAuthentication::bearer(move |req, credentials| {
-            let token = token.clone();
-            async move {
-                if credentials.token() == *token {
-                    Ok(req)
-                } else {
-                    let config = req
-                        .app_data::<bearer::Config>()
-                        .cloned()
-                        .unwrap_or_default()
-                        .scope("api");
-
-                    Err((AuthenticationError::from(config).into(), req))
-                }
-            }
-        })
-    });
-
-    if auth.is_none() {
-        if cli.disable_authentication {
-            log::warn!("Running without access token. This is discouraged as it may compromise your system.");
-        } else {
-            log::error!("Running without access token. This is discouraged as it may compromise your system. If you really want to do it, use --disable-authentication");
-            return Ok(ExitCode::FAILURE);
-        }
+    let mut uplinks = Vec::<Pin<Box<dyn Future<Output = Result<(), anyhow::Error>>>>>::new();
+    if let Some(options) = config.uplinks.http {
+        log::info!("Starting HTTP uplink");
+        uplinks.push(Box::pin(async {
+            uplink::http::run(options, manager).await
+        }));
     }
 
-    let server = HttpServer::new(move || {
-        App::new()
-            .app_data(manager.clone())
-            .wrap(Condition::from_option(auth.clone()))
-            .wrap(Logger::default())
-            .service(index)
-            .service(collect)
-            .service(collect_all)
-    })
-    .workers(1);
+    if uplinks.is_empty() {
+        log::warn!("No uplink configured");
+    }
 
-    let server = match (cli.tls_key, cli.tls_certificate) {
-        (Some(key), Some(cert)) => {
-            #[cfg(feature = "openssl")]
-            {
-                let mut acceptor = SslAcceptor::mozilla_modern_v5(SslMethod::tls_server())?;
-                acceptor.set_certificate_chain_file(cert)?;
-                acceptor.set_private_key_file(key, SslFiletype::PEM)?;
-                // let acceptor = actix_tls::accept::openssl::Acceptor::new()
-                server.bind_openssl(cli.bind_addr, acceptor)?.run()
-            }
-        }
-        (None, None) => server.bind(cli.bind_addr)?.run(),
-        _ => {
-            log::error!("Enabling TLS requires both --tls-key and --tls-certificate");
-            return Ok(ExitCode::FAILURE);
-        }
-    };
+    let mut tasks = uplinks;
+    tasks.push(Box::pin(async {
+        signal::ctrl_c().await.context("termination failed")?;
+        Ok(())
+    }));
 
-    server.await?;
+    #[cfg(unix)]
+    tasks.push(Box::pin(async {
+        signal(SignalKind::terminate())?.recv().await;
+        Ok(())
+    }));
+
+    let (result, _index, _others) = futures::future::select_all(tasks).await;
+    result?;
+
+    log::info!("Exiting agent");
 
     Ok(ExitCode::SUCCESS)
 }
