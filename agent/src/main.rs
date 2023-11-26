@@ -83,10 +83,10 @@ async fn main() -> anyhow::Result<ExitCode> {
     log::info!("Starting agent");
 
     let mut uplinks = Vec::<Pin<Box<dyn Future<Output = Result<(), anyhow::Error>>>>>::new();
-    if let Some(options) = config.uplinks.http {
+    if let Some(options) = config.uplinks.http_server {
         log::info!("Starting HTTP uplink");
         uplinks.push(Box::pin(async {
-            uplink::http::run(options, manager).await
+            uplink::http_server::run(options, manager).await
         }));
     }
 
