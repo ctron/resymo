@@ -84,9 +84,15 @@ async fn main() -> anyhow::Result<ExitCode> {
 
     let mut uplinks = Vec::<Pin<Box<dyn Future<Output = Result<(), anyhow::Error>>>>>::new();
     if let Some(options) = config.uplinks.http_server {
-        log::info!("Starting HTTP uplink");
+        log::info!("Starting HTTP server uplink");
         uplinks.push(Box::pin(async {
-            uplink::http_server::run(options, manager).await
+            uplink::http_server::run(options, manager.clone()).await
+        }));
+    }
+    if let Some(options) = config.uplinks.mqtt {
+        log::info!("Starting MQTT uplink");
+        uplinks.push(Box::pin(async {
+            uplink::mqtt::run(options, manager.clone()).await
         }));
     }
 
