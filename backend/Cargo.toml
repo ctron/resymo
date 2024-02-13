@@ -1,5 +1,5 @@
 [package]
-name = "resymo-agent"
+name = "resymo-backend"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,8 +7,7 @@ edition = "2021"
 anyhow = "1"
 async-trait = "0.1"
 clap = { version = "4", features = ["derive", "env", "string"] }
-dirs = "5.0"
-env_logger = "0.11"
+env_logger = "0.10"
 futures = "0.3"
 humantime = "2"
 humantime-serde = "1"
@@ -18,18 +17,18 @@ serde_json = "1"
 serde_yaml = "0.9"
 thiserror = "1"
 tokio = { version = "1", features = ["full"] }
-urlencoding = "2"
 
-sysinfo = { version = "0.30", features = [] }
-
-actix-web = "4"
+actix = "0.13"
+actix-web = { version = "4", features = [] }
 actix-web-extras = "0.1"
 actix-web-httpauth = "0.8"
+actix-web-actors = "4"
 
 actix-tls = { version = "3", optional = true, features = ["openssl"] }
 openssl = { version = "0.10", optional = true, features = ["v111"] }
 
-rumqttc = { version = "0.23", default-features = false, features = ["use-native-tls"] }
+ntex = { version = "0.7", features = ["tokio"] }
+ntex-mqtt = "0.12"
 
 resymo-common = { path = "../common", version = "0.1.0" }
 

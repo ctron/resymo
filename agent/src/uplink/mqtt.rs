@@ -81,7 +81,7 @@ pub async fn run(options: Options, manager: Arc<Manager>) -> anyhow::Result<()> 
         loop {
             tokio::time::sleep(Duration::from_secs(5)).await;
 
-            log::info!("Publishing state");
+            log::debug!("Publishing state");
             match manager.collect_all().await {
                 Ok(state) => {
                     for (name, state) in state {

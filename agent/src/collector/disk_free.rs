@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use serde_json::Value;
 use std::collections::HashMap;
-use sysinfo::{DiskExt, System, SystemExt};
+use sysinfo::Disks;
 
 pub struct Collector {}
 
@@ -14,13 +14,11 @@ impl Collector {
 #[async_trait]
 impl super::Collector for Collector {
     async fn collect(&self) -> anyhow::Result<Value> {
-        let mut system = System::new();
-        system.refresh_disks_list();
-        system.refresh_disks();
+        let disks = Disks::new_with_refreshed_list();
 
-        let mut disks = HashMap::new();
-        for disk in system.disks() {
-            disks.insert(
+        let mut result = HashMap::new();
+        for disk in disks.list() {
+            result.insert(
                 disk.name().to_string_lossy().to_string(),
                 DiskStatus {
                     free: disk.available_space(),
@@ -29,7 +27,7 @@ impl super::Collector for Collector {
             );
         }
 
-        Ok(serde_json::to_value(Status { disks })?)
+        Ok(serde_json::to_value(Status { disks: result })?)
     }
 }
 
