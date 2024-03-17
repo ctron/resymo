@@ -1,4 +1,0 @@
-uplinks:
-  mqtt:
-    host: localhost
-    disableTls: true

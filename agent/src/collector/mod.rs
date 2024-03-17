@@ -1,15 +1,28 @@
+pub mod disk_free;
+pub mod load_avg;
+
 use actix_web::body::BoxBody;
 use actix_web::{HttpResponse, ResponseError};
 use async_trait::async_trait;
+use homeassistant_agent::model::Discovery;
 use serde_json::json;
 use std::collections::{BTreeMap, HashMap};
 
-pub mod disk_free;
-pub mod load_avg;
+#[derive(Clone, Debug)]
+pub struct ValueDescriptor {
+    pub name: &'static str,
+    pub unit_of_measurement: Option<&'static str>,
+    pub value_template: &'static str,
+}
 
 #[async_trait]
 pub trait Collector: Send + Sync {
     async fn collect(&self) -> anyhow::Result<serde_json::Value>;
+
+    /// Describe payload for Home Assistant
+    fn describe_ha(&self) -> &'static [Discovery] {
+        &[]
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -29,8 +42,9 @@ impl ResponseError for Error {
     }
 }
 
+#[derive(Default)]
 pub struct Manager {
-    collectors: HashMap<String, Box<dyn Collector>>,
+    pub collectors: HashMap<String, Box<dyn Collector>>,
 }
 
 impl Manager {
@@ -49,7 +63,7 @@ impl Manager {
         self
     }
 
-    pub async fn collect(&self, name: &str) -> Result<Option<serde_json::Value>, Error> {
+    pub async fn collect_one(&self, name: &str) -> Result<Option<serde_json::Value>, Error> {
         Ok(match self.collectors.get(name) {
             Some(collector) => Some(
                 collector

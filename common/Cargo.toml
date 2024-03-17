@@ -4,20 +4,20 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+actix-http = "3"
+actix-service = "2"
+actix-web = "4"
+actix-web-extras = "0.1"
+actix-web-httpauth = "0.8"
 anyhow = "1"
 async-trait = "0.1"
 clap = { version = "4", features = ["derive", "env"] }
 futures = "0.3"
 log = "0.4"
+schemars = "0.8"
 serde = { version = "1", features = ["derive"] }
 thiserror = "1"
 tokio = { version = "1", features = ["full"] }
-
-actix-service = "2"
-actix-http = "3"
-actix-web = "4"
-actix-web-extras = "0.1"
-actix-web-httpauth = "0.8"
 
 actix-tls = { version = "3", optional = true, features = ["openssl"] }
 openssl = { version = "0.10", optional = true, features = ["v111"] }

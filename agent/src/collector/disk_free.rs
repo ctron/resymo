@@ -3,13 +3,8 @@ use serde_json::Value;
 use std::collections::HashMap;
 use sysinfo::Disks;
 
-pub struct Collector {}
-
-impl Collector {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
+#[derive(Default)]
+pub struct Collector;
 
 #[async_trait]
 impl super::Collector for Collector {

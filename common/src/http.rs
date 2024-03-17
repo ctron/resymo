@@ -10,7 +10,7 @@ use std::net::{IpAddr, SocketAddr};
 use std::path::PathBuf;
 use std::str::FromStr;
 
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, clap::Args)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, clap::Args, schemars::JsonSchema)]
 pub struct Options {
     /// Bind host
     #[serde(default, skip_serializing_if = "Option::is_none")]

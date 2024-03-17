@@ -43,8 +43,8 @@ pub enum Command {}
 pub enum Message {}
 
 impl Runner {
-    fn command(&self, payload: &[u8]) -> anyhow::Result<()> {
-        let command: Command = serde_json::from_slice(payload)?;
+    fn command(&self, _payload: &[u8]) -> anyhow::Result<()> {
+        // let command: Command = serde_json::from_slice(payload)?;
 
         Ok(())
     }

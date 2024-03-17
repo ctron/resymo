@@ -12,7 +12,7 @@ use std::sync::Arc;
 const DEFAULT_BIND_PORT: u16 = 4242;
 const DEFAULT_BIND_HOST: IpAddr = IpAddr::V6(Ipv6Addr::LOCALHOST);
 
-#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Options {
     /// Remote access token
@@ -46,7 +46,7 @@ async fn collect(
 
     log::info!("Collecting: {collector}");
 
-    Ok(match manager.collect(&collector).await? {
+    Ok(match manager.collect_one(&collector).await? {
         Some(result) => HttpResponse::Ok().json(result),
         None => HttpResponse::NotFound().finish(),
     })

@@ -1,7 +1,8 @@
-use crate::collector::{disk_free, load_avg, Manager};
-use crate::config::Config;
 use anyhow::Context;
 use clap::Parser;
+use resymo_agent::collector::{disk_free, load_avg, Manager};
+use resymo_agent::config::Config;
+use resymo_agent::uplink;
 use std::future::Future;
 use std::path::PathBuf;
 use std::pin::Pin;
@@ -11,10 +12,6 @@ use tokio::signal;
 
 #[cfg(unix)]
 use tokio::signal::unix::{signal, SignalKind};
-
-mod collector;
-mod config;
-mod uplink;
 
 const CONFIG_FILE: &str = "resymo/agent.yaml";
 
@@ -76,7 +73,7 @@ async fn main() -> anyhow::Result<ExitCode> {
 
     let manager = Arc::new(
         Manager::new()
-            .register("disk_free", disk_free::Collector::new())
+            .register("disk_free", disk_free::Collector)
             .register("load_avg", load_avg::Collector),
     );
 
@@ -89,10 +86,10 @@ async fn main() -> anyhow::Result<ExitCode> {
             uplink::http_server::run(options, manager.clone()).await
         }));
     }
-    if let Some(options) = config.uplinks.mqtt {
-        log::info!("Starting MQTT uplink");
+    if let Some(options) = config.uplinks.homeassistant {
+        log::info!("Starting Homeassistant MQTT uplink");
         uplinks.push(Box::pin(async {
-            uplink::mqtt::run(options, manager.clone()).await
+            uplink::homeassistant::run(options, manager.clone()).await
         }));
     }
 

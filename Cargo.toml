@@ -5,3 +5,6 @@ members = [
     "agent",
     "backend",
 ]
+
+[patch.crates-io]
+homeassistant-agent = { path = "../homeassistant-agent" }
