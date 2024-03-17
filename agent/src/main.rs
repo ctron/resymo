@@ -31,8 +31,7 @@ pub struct Cli {
 }
 
 fn config_file() -> String {
-    dirs::config_dir()
-        .unwrap_or_else(|| PathBuf::from("/etc"))
+    PathBuf::from("/etc")
         .join(CONFIG_FILE)
         .display()
         .to_string()

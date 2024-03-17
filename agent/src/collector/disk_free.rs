@@ -19,7 +19,7 @@ impl super::Collector for Collector {
                 DiskStatus {
                     free: disk.available_space(),
                     total: disk.total_space(),
-                    usage: disk.available_space() as f64 / disk.total_space() as f64,
+                    usage: 1f64 - (disk.available_space() as f64) / (disk.total_space() as f64),
                 },
             );
         }
@@ -63,7 +63,7 @@ impl super::Collector for Collector {
                 name: Some(format!("Disk usage {display_name}")),
                 state_class: Some(StateClass::Measurement),
                 value_template: Some(format!(
-                    r#"{{{{ value_json.disks['{source_name}'].usage }}}}"#
+                    r#"{{{{ value_json.disks['{source_name}'].usage * 100 }}}}"#
                 )),
                 unit_of_measurement: Some("%".to_string()),
                 ..Default::default()

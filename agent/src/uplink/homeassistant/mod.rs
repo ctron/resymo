@@ -1,6 +1,6 @@
 use crate::collector::Manager;
 use actix_web::web::Bytes;
-use anyhow::Context;
+use gethostname::gethostname;
 use homeassistant_agent::connector::{Client, Connector, ConnectorHandler, ConnectorOptions};
 use homeassistant_agent::model::{Component, Device, DeviceId, Discovery};
 use std::sync::Arc;
@@ -126,6 +126,7 @@ impl ResymoUplink {
                 let entity = Discovery {
                     state_topic: Some(state_topic.clone()),
                     device: Some(device.clone()),
+                    unique_id: Some(unique_id.clone()),
                     ..(entity.clone())
                 };
 
@@ -193,8 +194,7 @@ pub async fn run(options: Options, manager: Arc<Manager>) -> anyhow::Result<()> 
 
     let device_id = match options.device_id {
         Some(device_id) => device_id,
-        None => std::env::var("HOSTNAME")
-            .context("Unable to evaluate hostname from the 'HOSTNAME' environment variable")?,
+        None => gethostname().to_string_lossy().to_string(),
     };
 
     let options = RunnerOptions {
