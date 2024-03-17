@@ -13,7 +13,7 @@ clap = { version = "4", features = ["derive", "env", "string"] }
 dirs = "5.0"
 env_logger = "0.11"
 futures = "0.3"
-homeassistant-agent = { version = "=0.2.0-alpha.3", features = ["schemars"] }
+homeassistant-agent = { version = "=0.2.0-alpha.4", features = ["schemars"] }
 humantime = "2"
 humantime-serde = "1"
 log = "0.4"

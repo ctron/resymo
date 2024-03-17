@@ -7,4 +7,4 @@ members = [
 ]
 
 [patch.crates-io]
-homeassistant-agent = { path = "../homeassistant-agent" }
+#homeassistant-agent = { path = "../homeassistant-agent" }
