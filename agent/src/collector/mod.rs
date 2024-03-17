@@ -20,8 +20,8 @@ pub trait Collector: Send + Sync {
     async fn collect(&self) -> anyhow::Result<serde_json::Value>;
 
     /// Describe payload for Home Assistant
-    fn describe_ha(&self) -> &'static [Discovery] {
-        &[]
+    fn describe_ha(&self) -> Vec<Discovery> {
+        vec![]
     }
 }
 

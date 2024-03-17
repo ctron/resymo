@@ -1,7 +1,6 @@
 use async_trait::async_trait;
 use homeassistant_agent::model::{Discovery, StateClass};
 use serde_json::Value;
-use std::sync::OnceLock;
 use sysinfo::{LoadAvg, System};
 
 pub struct Collector;
@@ -20,33 +19,29 @@ impl super::Collector for Collector {
         Ok(serde_json::to_value(Status { one, five, fifteen })?)
     }
 
-    fn describe_ha(&self) -> &'static [Discovery] {
-        static DESCRIPTORS: OnceLock<Vec<Discovery>> = OnceLock::new();
-
-        DESCRIPTORS.get_or_init(|| {
-            vec![
-                Discovery {
-                    unique_id: Some("loadavg_1".to_string()),
-                    name: Some("Load Average 1m".to_string()),
-                    state_class: Some(StateClass::Measurement),
-                    value_template: Some("{{ value_json.one }}".to_string()),
-                    ..Default::default()
-                },
-                Discovery {
-                    unique_id: Some("loadavg_5".to_string()),
-                    name: Some("Load Average 5m".to_string()),
-                    state_class: Some(StateClass::Measurement),
-                    value_template: Some("{{ value_json.five }}".to_string()),
-                    ..Default::default()
-                },
-                Discovery {
-                    unique_id: Some("loadavg_15".to_string()),
-                    name: Some("Load Average 15m".to_string()),
-                    state_class: Some(StateClass::Measurement),
-                    value_template: Some("{{ value_json.fifteen }}".to_string()),
-                    ..Default::default()
-                },
-            ]
-        })
+    fn describe_ha(&self) -> Vec<Discovery> {
+        vec![
+            Discovery {
+                unique_id: Some("loadavg_1".to_string()),
+                name: Some("Load Average 1m".to_string()),
+                state_class: Some(StateClass::Measurement),
+                value_template: Some("{{ value_json.one }}".to_string()),
+                ..Default::default()
+            },
+            Discovery {
+                unique_id: Some("loadavg_5".to_string()),
+                name: Some("Load Average 5m".to_string()),
+                state_class: Some(StateClass::Measurement),
+                value_template: Some("{{ value_json.five }}".to_string()),
+                ..Default::default()
+            },
+            Discovery {
+                unique_id: Some("loadavg_15".to_string()),
+                name: Some("Load Average 15m".to_string()),
+                state_class: Some(StateClass::Measurement),
+                value_template: Some("{{ value_json.fifteen }}".to_string()),
+                ..Default::default()
+            },
+        ]
     }
 }

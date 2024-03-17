@@ -12,6 +12,13 @@ use tokio::time::MissedTickBehavior;
 pub struct UplinkOptions {
     /// The device ID. Will default to the value of the `HOSTNAME` environment variable.
     pub device_id: Option<String>,
+    /// Base topic
+    #[serde(default = "default_base")]
+    pub base: String,
+}
+
+fn default_base() -> String {
+    "resymo".to_string()
 }
 
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize, schemars::JsonSchema)]
@@ -32,19 +39,19 @@ pub enum Error {
 pub struct ResymoUplink {
     client: Client,
     manager: Arc<Manager>,
-    device_id: String,
+    options: RunnerOptions,
     _tx: oneshot::Sender<()>,
 }
 
 impl ResymoUplink {
-    pub fn new(client: Client, manager: Arc<Manager>, device_id: String) -> Self {
+    fn new(client: Client, manager: Arc<Manager>, options: RunnerOptions) -> Self {
         let (tx, rx) = oneshot::channel::<()>();
 
         let runner = Runner {
             shutdown: rx,
             client: client.clone(),
             manager: manager.clone(),
-            device_id: device_id.clone(),
+            options: options.clone(),
         };
 
         tokio::spawn({
@@ -56,7 +63,7 @@ impl ResymoUplink {
         Self {
             client,
             manager,
-            device_id,
+            options,
             _tx: tx,
         }
     }
@@ -92,15 +99,18 @@ impl ResymoUplink {
 
     async fn announce(&self) -> Result<(), Error> {
         let device = Device {
-            identifiers: vec![self.device_id.clone()],
-            name: Some(format!("ReSyMo: {}", self.device_id)),
+            identifiers: vec![self.options.device_id.clone()],
+            name: Some(format!("ReSyMo: {}", self.options.device_id)),
             base_topic: None,
             sw_version: Some(env!("CARGO_PKG_VERSION").to_string()),
             support_url: None,
         };
 
         for (name, collector) in &self.manager.collectors {
-            let state_topic = format!("{}/{name}/state", self.device_id);
+            let state_topic = format!(
+                "{}/{}/{name}/state",
+                self.options.base, self.options.device_id
+            );
 
             let entities = collector.describe_ha();
 
@@ -108,7 +118,7 @@ impl ResymoUplink {
                 let Some(unique_id) = entity
                     .unique_id
                     .as_ref()
-                    .map(|id| format!("{}_{name}_{id}", self.device_id,))
+                    .map(|id| format!("{}_{name}_{id}", self.options.device_id,))
                 else {
                     continue;
                 };
@@ -128,11 +138,17 @@ impl ResymoUplink {
     }
 }
 
+#[derive(Clone, Debug)]
+struct RunnerOptions {
+    device_id: String,
+    base: String,
+}
+
 struct Runner {
     pub shutdown: oneshot::Receiver<()>,
     pub client: Client,
     pub manager: Arc<Manager>,
-    pub device_id: String,
+    pub options: RunnerOptions,
 }
 
 impl Runner {
@@ -143,6 +159,7 @@ impl Runner {
         loop {
             tokio::select! {
                 _ = interval.tick() => {
+                    log::info!("Update state");
                     if let Err(err) = self.collect().await {
                         log::warn!("Failed to collect state: {err}");
                     }
@@ -157,7 +174,10 @@ impl Runner {
 
     async fn collect(&self) -> anyhow::Result<()> {
         for (collector, state) in self.manager.collect_all().await? {
-            let topic = format!("{}/{collector}/state", self.device_id);
+            let topic = format!(
+                "{}/{}/{collector}/state",
+                self.options.base, self.options.device_id
+            );
 
             self.client
                 .update_state(topic, serde_json::to_vec(&state)?)
@@ -177,8 +197,13 @@ pub async fn run(options: Options, manager: Arc<Manager>) -> anyhow::Result<()> 
             .context("Unable to evaluate hostname from the 'HOSTNAME' environment variable")?,
     };
 
+    let options = RunnerOptions {
+        device_id,
+        base: options.base,
+    };
+
     let connector = Connector::new(connector, |client| {
-        ResymoUplink::new(client, manager, device_id)
+        ResymoUplink::new(client, manager, options)
     });
     connector.run().await?;
 
