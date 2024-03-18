@@ -44,6 +44,9 @@ openssl = { version = "0.10", optional = true, features = ["v111"] }
 default = [
     "openssl"
 ]
+vendored = [
+    "openssl?/vendored"
+]
 
 openssl = [
     "dep:openssl",
