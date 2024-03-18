@@ -1,6 +1,11 @@
 # ReSyMo – Remote System Monitoring
 
-An itch to a scratch of having a few servers, but no dashboard to see their status.
+[![crates.io](https://img.shields.io/crates/v/resymo-agent.svg)](https://crates.io/crates/resymo-agent)
+[![docs.rs](https://docs.rs/resymo-agent/badge.svg)](https://docs.rs/resymo-agent)
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/tag/ctron/resymo?sort=semver)](https://github.com/ctron/resymo/releases)
+[![CI](https://github.com/ctron/resymo/actions/workflows/ci.yaml/badge.svg)](https://github.com/ctron/resymo/actions/workflows/ci.yaml)
+
+An itch to a scratch of having a few servers, but no dashboard to monitor their status.
 
 ## Getting started
 
