@@ -1,8 +1,7 @@
 pub mod disk_free;
 pub mod load_avg;
 
-use actix_web::body::BoxBody;
-use actix_web::{HttpResponse, ResponseError};
+use actix_web::{body::BoxBody, HttpResponse, ResponseError};
 use async_trait::async_trait;
 use homeassistant_agent::model::Discovery;
 use serde_json::json;

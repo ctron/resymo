@@ -1,12 +1,12 @@
 use crate::collector::Manager;
 use actix_web::web::Bytes;
 use gethostname::gethostname;
-use homeassistant_agent::connector::{Client, Connector, ConnectorHandler, ConnectorOptions};
-use homeassistant_agent::model::{Component, Device, DeviceId, Discovery};
-use std::sync::Arc;
-use std::time::Duration;
-use tokio::sync::oneshot;
-use tokio::time::MissedTickBehavior;
+use homeassistant_agent::{
+    connector::{Client, Connector, ConnectorHandler, ConnectorOptions},
+    model::{Component, Device, DeviceId, Discovery},
+};
+use std::{sync::Arc, time::Duration};
+use tokio::{sync::oneshot, time::MissedTickBehavior};
 
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize, schemars::JsonSchema)]
 pub struct UplinkOptions {

@@ -1,9 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
-    "common",
     "agent",
-    "backend",
 ]
 
 [patch.crates-io]

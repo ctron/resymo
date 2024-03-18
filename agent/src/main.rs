@@ -1,13 +1,11 @@
 use anyhow::Context;
 use clap::Parser;
-use resymo_agent::collector::{disk_free, load_avg, Manager};
-use resymo_agent::config::Config;
-use resymo_agent::uplink;
-use std::future::Future;
-use std::path::PathBuf;
-use std::pin::Pin;
-use std::process::ExitCode;
-use std::sync::Arc;
+use resymo_agent::{
+    collector::{disk_free, load_avg, Manager},
+    config::Config,
+    uplink,
+};
+use std::{future::Future, path::PathBuf, pin::Pin, process::ExitCode, sync::Arc};
 use tokio::signal;
 
 #[cfg(unix)]

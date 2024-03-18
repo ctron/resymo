@@ -1,13 +1,15 @@
-use crate::collector::Manager;
-use actix_web::middleware::Logger;
-use actix_web::{get, web, App, HttpResponse, Responder};
+use crate::{collector::Manager, common::http};
+use actix_web::{get, middleware::Logger, web, App, HttpResponse, Responder};
 use actix_web_extras::middleware::Condition;
-use actix_web_httpauth::extractors::{bearer, AuthenticationError};
-use actix_web_httpauth::middleware::HttpAuthentication;
+use actix_web_httpauth::{
+    extractors::{bearer, AuthenticationError},
+    middleware::HttpAuthentication,
+};
 use anyhow::bail;
-use resymo_common::http;
-use std::net::{IpAddr, Ipv6Addr};
-use std::sync::Arc;
+use std::{
+    net::{IpAddr, Ipv6Addr},
+    sync::Arc,
+};
 
 const DEFAULT_BIND_PORT: u16 = 4242;
 const DEFAULT_BIND_HOST: IpAddr = IpAddr::V6(Ipv6Addr::LOCALHOST);

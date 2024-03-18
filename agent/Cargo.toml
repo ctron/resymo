@@ -2,11 +2,14 @@
 name = "resymo-agent"
 version = "0.1.0"
 edition = "2021"
+license = "Apache-2.0"
 
 [dependencies]
 actix-web = "4"
 actix-web-extras = "0.1"
 actix-web-httpauth = "0.8"
+actix-http = "3"
+actix-service = "2"
 anyhow = "1"
 async-trait = "0.1"
 clap = { version = "4", features = ["derive", "env", "string"] }
@@ -29,8 +32,6 @@ urlencoding = "2"
 
 actix-tls = { version = "3", optional = true, features = ["openssl"] }
 openssl = { version = "0.10", optional = true, features = ["v111"] }
-
-resymo-common = { path = "../common", version = "0.1.0" }
 
 [features]
 default = [
