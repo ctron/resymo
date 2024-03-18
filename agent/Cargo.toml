@@ -1,8 +1,15 @@
 [package]
 name = "resymo-agent"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 edition = "2021"
 license = "Apache-2.0"
+
+description = "A remote system monitoring tool for a small set of servers"
+authors = ["Jens Reimann <ctron@dentrassi.de>"]
+repository = "https://github.com/ctron/resymo"
+categories = ["network-programming"]
+keywords = ["monitoring", "network", "server"]
+readme = "../README.md"
 
 [dependencies]
 actix-web = "4"
