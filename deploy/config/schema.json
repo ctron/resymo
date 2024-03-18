@@ -19,14 +19,14 @@
         "host"
       ],
       "properties": {
-        "client_id": {
+        "clientId": {
           "description": "The MQTT client id, defaults to a random ID",
           "type": [
             "string",
             "null"
           ]
         },
-        "disable_tls": {
+        "disableTls": {
           "description": "TLS is used by default, you can disable it here.",
           "type": "boolean"
         },
@@ -34,7 +34,7 @@
           "description": "The MQTT's servers/brokers hostname #[cfg_attr(feature = \"clap\", arg(long, env))]",
           "type": "string"
         },
-        "keep_alive": {
+        "keepAlive": {
           "description": "A duration in the humantime format. For example: '30s' for 30 seconds. '5m' for 5 minutes.",
           "default": "5s",
           "examples": [
@@ -58,7 +58,7 @@
           "format": "uint16",
           "minimum": 0.0
         },
-        "topic_base": {
+        "topicBase": {
           "description": "Base topic, defaults to `homeassistant`",
           "type": [
             "string",
@@ -126,6 +126,11 @@
         "connector"
       ],
       "properties": {
+        "base": {
+          "description": "Base topic",
+          "default": "resymo",
+          "type": "string"
+        },
         "connector": {
           "description": "Uplink connector options",
           "allOf": [
@@ -134,7 +139,7 @@
             }
           ]
         },
-        "device_id": {
+        "deviceId": {
           "description": "The device ID. Will default to the value of the `HOSTNAME` environment variable.",
           "type": [
             "string",

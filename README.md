@@ -2,6 +2,12 @@
 
 An itch to a scratch of having a few servers, but no dashboard to see their status.
 
+## Getting started
+
+* Install Home Assistant on one machine
+* Set up an MQTT broker (see [Architecture](#current-architecture) below)
+* Deploy the ReSyMo agent on machines you want to monitor
+
 ## Goals and non-goals
 
 The goal is to have a small tool, allowing to get an overview of a handful of servers. Re-using components where

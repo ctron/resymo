@@ -1,3 +1,5 @@
+$schema: "../schema.json"
+
 uplinks:
   httpServer:
     token: "1234"

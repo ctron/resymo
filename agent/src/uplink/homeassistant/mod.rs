@@ -9,6 +9,7 @@ use std::{sync::Arc, time::Duration};
 use tokio::{sync::oneshot, time::MissedTickBehavior};
 
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct UplinkOptions {
     /// The device ID. Will default to the value of the `HOSTNAME` environment variable.
     pub device_id: Option<String>,

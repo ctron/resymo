@@ -1,3 +1,13 @@
+//! The configuration model
+//!
+//! ## Schema
+//!
+//! Whenever you make changes to the configuration model, run:
+//!
+//! ```bash
+//! run --package resymo-agent --example gen_schema
+//! ```
+
 use crate::uplink;
 
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize, schemars::JsonSchema)]

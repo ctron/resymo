@@ -1,0 +1,10 @@
+$schema: "../schema.json"
+
+uplinks:
+  homeassistant:
+    deviceId: "my-server" # explicit device ID, defaults to machine's hostname
+    connector:
+      # clientId: "" # MQTT client ID, defaults to a random id
+      host: localhost
+      port: 8883
+      disableTls: false
