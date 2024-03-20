@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use homeassistant_agent::model::{Discovery, StateClass};
+use homeassistant_agent::model::{Discovery, SensorClass, StateClass};
 use serde_json::Value;
 use sysinfo::System;
 
@@ -34,6 +34,8 @@ impl super::Collector for Collector {
                 name: Some("Free swap space".to_string()),
                 state_class: Some(StateClass::Measurement),
                 value_template: Some("{{ value_json.free }}".to_string()),
+                device_class: Some(SensorClass::DataSize.as_ref().to_string()),
+                unit_of_measurement: Some("B".to_string()),
                 ..Default::default()
             },
             Discovery {
@@ -41,6 +43,8 @@ impl super::Collector for Collector {
                 name: Some("Total swap space".to_string()),
                 state_class: Some(StateClass::Measurement),
                 value_template: Some("{{ value_json.total }}".to_string()),
+                device_class: Some(SensorClass::DataSize.as_ref().to_string()),
+                unit_of_measurement: Some("B".to_string()),
                 ..Default::default()
             },
             Discovery {
@@ -48,6 +52,8 @@ impl super::Collector for Collector {
                 name: Some("Used swap space".to_string()),
                 state_class: Some(StateClass::Measurement),
                 value_template: Some("{{ value_json.used }}".to_string()),
+                device_class: Some(SensorClass::DataSize.as_ref().to_string()),
+                unit_of_measurement: Some("B".to_string()),
                 ..Default::default()
             },
         ]
