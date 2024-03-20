@@ -15,6 +15,7 @@ use tokio::signal::unix::{signal, SignalKind};
 const CONFIG_FILE: &str = "resymo/agent.yaml";
 
 #[derive(Clone, Debug, clap::Parser)]
+#[command(version, about, author)]
 pub struct Cli {
     /// Be quiet
     #[arg(short, long, env)]
