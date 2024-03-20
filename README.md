@@ -7,6 +7,8 @@
 
 An itch to a scratch of having a few servers, but no dashboard to monitor their status.
 
+![Screenshot of an Example](docs/screenshot-1.png)
+
 ## Getting started
 
 * Install Home Assistant on one machine
