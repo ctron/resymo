@@ -8,6 +8,7 @@ use resymo_agent::{
 use std::{future::Future, path::PathBuf, pin::Pin, process::ExitCode, sync::Arc};
 use tokio::signal;
 
+use resymo_agent::collector::{memory, swap};
 #[cfg(unix)]
 use tokio::signal::unix::{signal, SignalKind};
 
@@ -71,7 +72,9 @@ async fn main() -> anyhow::Result<ExitCode> {
     let manager = Arc::new(
         Manager::new()
             .register("disk_free", disk_free::Collector)
-            .register("load_avg", load_avg::Collector),
+            .register("load_avg", load_avg::Collector)
+            .register("swap", swap::Collector)
+            .register("memory", memory::Collector),
     );
 
     log::info!("Starting agent");

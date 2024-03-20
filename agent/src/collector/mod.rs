@@ -1,5 +1,7 @@
 pub mod disk_free;
 pub mod load_avg;
+pub mod memory;
+pub mod swap;
 
 use actix_web::{body::BoxBody, HttpResponse, ResponseError};
 use async_trait::async_trait;
