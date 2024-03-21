@@ -1,8 +1,25 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Config",
+  "description": "Agent configuration",
   "type": "object",
   "properties": {
+    "collectors": {
+      "default": {
+        "diskFree": {},
+        "exec": {
+          "items": {}
+        },
+        "loadAvg": {},
+        "memory": {},
+        "swap": {}
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/Collectors"
+        }
+      ]
+    },
     "uplinks": {
       "default": {},
       "allOf": [
@@ -13,6 +30,85 @@
     }
   },
   "definitions": {
+    "Collectors": {
+      "description": "Collector configurations",
+      "type": "object",
+      "properties": {
+        "diskFree": {
+          "description": "Disk",
+          "default": {},
+          "allOf": [
+            {
+              "$ref": "#/definitions/CommonCollector"
+            }
+          ]
+        },
+        "exec": {
+          "description": "Exec",
+          "default": {
+            "items": {}
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/Configuration"
+            }
+          ]
+        },
+        "loadAvg": {
+          "description": "Load average",
+          "default": {},
+          "allOf": [
+            {
+              "$ref": "#/definitions/CommonCollector"
+            }
+          ]
+        },
+        "memory": {
+          "description": "Memory",
+          "default": {},
+          "allOf": [
+            {
+              "$ref": "#/definitions/CommonCollector"
+            }
+          ]
+        },
+        "swap": {
+          "description": "Swap",
+          "default": {},
+          "allOf": [
+            {
+              "$ref": "#/definitions/CommonCollector"
+            }
+          ]
+        }
+      }
+    },
+    "CommonCollector": {
+      "description": "Common collector settings",
+      "type": "object",
+      "properties": {
+        "disabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Configuration": {
+      "description": "Common collector settings",
+      "type": "object",
+      "properties": {
+        "disabled": {
+          "type": "boolean"
+        },
+        "items": {
+          "description": "execution tasks",
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Task"
+          }
+        }
+      }
+    },
     "ConnectorOptions": {
       "type": "object",
       "required": [
@@ -66,6 +162,116 @@
           ]
         },
         "username": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "Device": {
+      "type": "object",
+      "properties": {
+        "identifiers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "name": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "support_url": {
+          "description": "Support URL of the application that supplies the discovered MQTT item.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sw_version": {
+          "description": "Software version of the application that supplies the discovered MQTT item.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "~": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "Discovery": {
+      "description": "Discovery message",
+      "type": "object",
+      "properties": {
+        "command_topic": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "device": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Device"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "device_class": {
+          "description": "The device class. Should be `null` if omitted, so don't skip.",
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "description": "The name of the application that is the origin the discovered MQTT item. This option is required.",
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "state_class": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/StateClass"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "state_topic": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "unique_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "unit_of_measurement": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "value_template": {
           "type": [
             "string",
             "null"
@@ -148,7 +354,61 @@
         }
       }
     },
+    "StateClass": {
+      "type": "string",
+      "enum": [
+        "measurement",
+        "total",
+        "total_increasing"
+      ]
+    },
+    "Task": {
+      "type": "object",
+      "required": [
+        "command"
+      ],
+      "properties": {
+        "args": {
+          "description": "The arguments",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cleanEnv": {
+          "type": "boolean"
+        },
+        "command": {
+          "description": "The binary to call",
+          "type": "string"
+        },
+        "discovery": {
+          "description": "The Home Assistant discovery section",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Discovery"
+          }
+        },
+        "envs": {
+          "description": "The environment variables",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "period": {
+          "description": "A duration in the humantime format. For example: '30s' for 30 seconds. '5m' for 5 minutes.",
+          "default": "1m",
+          "examples": [
+            "30s",
+            "1m"
+          ],
+          "type": "string"
+        }
+      }
+    },
     "Uplinks": {
+      "description": "Uplink configuration",
       "type": "object",
       "properties": {
         "homeassistant": {

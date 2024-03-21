@@ -1,11 +1,14 @@
-use crate::collector::{disk_free, load_avg, memory, swap, Manager};
-use crate::config::Collectors;
-
 pub mod collector;
 pub mod common;
 pub mod config;
 pub mod uplink;
+
 mod utils;
+
+use crate::{
+    collector::{disk_free, exec, load_avg, memory, swap, Manager},
+    config::Collectors,
+};
 
 pub fn create_from(config: Collectors) -> anyhow::Result<Manager> {
     let mut manager = Manager::new();
@@ -21,6 +24,11 @@ pub fn create_from(config: Collectors) -> anyhow::Result<Manager> {
     }
     if !config.load_avg.disabled {
         manager = manager.register("load_avg", load_avg::Collector);
+    }
+    if !config.exec.disabled {
+        for (name, exec) in exec::Collector::new(config.exec) {
+            manager = manager.register(name, exec);
+        }
     }
 
     Ok(manager)

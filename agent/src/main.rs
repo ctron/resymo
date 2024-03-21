@@ -1,10 +1,6 @@
 use anyhow::Context;
 use clap::Parser;
-use resymo_agent::{
-    collector::{disk_free, load_avg, memory, swap, Manager},
-    config::Config,
-    create_from, uplink,
-};
+use resymo_agent::{config::Config, create_from, uplink};
 use std::{future::Future, path::PathBuf, pin::Pin, process::ExitCode, sync::Arc};
 use tokio::signal;
 

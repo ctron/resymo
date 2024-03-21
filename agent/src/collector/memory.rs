@@ -1,3 +1,5 @@
+//! Memory collector
+
 use async_trait::async_trait;
 use homeassistant_agent::model::{Discovery, SensorClass, StateClass};
 use serde_json::Value;

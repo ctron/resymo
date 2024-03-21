@@ -6,3 +6,4 @@ members = [
 
 [patch.crates-io]
 #homeassistant-agent = { path = "../homeassistant-agent" }
+#homeassistant-agent = { git = "https://github.com/ctron/homeassistant-agent.git", rev = "35ab7ef0a968334301431f6950045be3dc0a6318" }

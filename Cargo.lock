@@ -898,9 +898,9 @@ checksum = "d231dfb89cfffdbc30e7fc41579ed6066ad03abda9e567ccafae602b97ec5024"
 
 [[package]]
 name = "homeassistant-agent"
-version = "0.2.0-alpha.5"
+version = "0.2.0-alpha.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e5728c69ab0809f3a760c8d003d4e8c7d2a6af92667a916b729a06174fbc950"
+checksum = "ce69cf0df7b98e5139d3ba61d5c4f85b0fa8167972460e7c8f2765277e298d75"
 dependencies = [
  "bytes",
  "futures-util",
@@ -1372,7 +1372,7 @@ checksum = "c08c74e62047bb2de4ff487b251e4a92e24f48745648451635cec7d591162d9f"
 
 [[package]]
 name = "resymo-agent"
-version = "0.1.0-alpha.5"
+version = "0.1.0-alpha.6"
 dependencies = [
  "actix-http",
  "actix-service",

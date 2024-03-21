@@ -1,4 +1,5 @@
 pub mod disk_free;
+pub mod exec;
 pub mod load_avg;
 pub mod memory;
 pub mod swap;

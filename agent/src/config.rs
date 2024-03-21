@@ -8,6 +8,7 @@
 //! run --package resymo-agent --example gen_schema
 //! ```
 
+use crate::collector::exec;
 use crate::{uplink, utils::is_default};
 
 /// Agent configuration
@@ -58,4 +59,8 @@ pub struct Collectors {
     /// Disk
     #[serde(default)]
     pub disk_free: CommonCollector,
+
+    /// Exec
+    #[serde(default)]
+    pub exec: exec::Configuration,
 }
