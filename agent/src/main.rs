@@ -1,9 +1,10 @@
 use anyhow::Context;
 use clap::Parser;
-use resymo_agent::{config::Config, create_from, uplink};
+use resymo_agent::{config::Config, uplink};
 use std::{future::Future, path::PathBuf, pin::Pin, process::ExitCode, sync::Arc};
 use tokio::signal;
 
+use resymo_agent::manager::Manager;
 #[cfg(unix)]
 use tokio::signal::unix::{signal, SignalKind};
 
@@ -65,7 +66,7 @@ async fn main() -> anyhow::Result<ExitCode> {
             .with_context(|| format!("Reading configuration file: '{}'", cli.config.display()))?,
     )?;
 
-    let manager = Arc::new(create_from(config.collectors)?);
+    let manager = Arc::new(Manager::try_from((config.collectors, config.commands))?);
 
     log::info!("Starting agent");
 

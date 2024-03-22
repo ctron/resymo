@@ -8,7 +8,7 @@
 //! run --package resymo-agent --example gen_schema
 //! ```
 
-use crate::collector::exec;
+use crate::{collector, command};
 use crate::{uplink, utils::is_default};
 
 /// Agent configuration
@@ -19,6 +19,9 @@ pub struct Config {
 
     #[serde(default)]
     pub collectors: Collectors,
+
+    #[serde(default)]
+    pub commands: Commands,
 }
 
 /// Uplink configuration
@@ -62,5 +65,22 @@ pub struct Collectors {
 
     /// Exec
     #[serde(default)]
-    pub exec: exec::Configuration,
+    pub exec: collector::exec::Configuration,
+}
+
+/// Common collector settings
+#[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct CommonCommand {
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub disabled: bool,
+}
+
+/// Collector configurations
+#[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct Commands {
+    /// Exec
+    #[serde(default)]
+    pub exec: command::exec::Configuration,
 }

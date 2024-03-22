@@ -1,4 +1,4 @@
-use crate::{collector::Manager, common::http};
+use crate::{common::http, manager::Manager};
 use actix_web::{get, middleware::Logger, web, App, HttpResponse, Responder};
 use actix_web_extras::middleware::Condition;
 use actix_web_httpauth::{

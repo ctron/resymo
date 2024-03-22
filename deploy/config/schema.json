@@ -20,6 +20,18 @@
         }
       ]
     },
+    "commands": {
+      "default": {
+        "exec": {
+          "items": {}
+        }
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/Commands"
+        }
+      ]
+    },
     "uplinks": {
       "default": {},
       "allOf": [
@@ -83,6 +95,23 @@
         }
       }
     },
+    "Commands": {
+      "description": "Collector configurations",
+      "type": "object",
+      "properties": {
+        "exec": {
+          "description": "Exec",
+          "default": {
+            "items": {}
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/Configuration2"
+            }
+          ]
+        }
+      }
+    },
     "CommonCollector": {
       "description": "Common collector settings",
       "type": "object",
@@ -105,6 +134,23 @@
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/Task"
+          }
+        }
+      }
+    },
+    "Configuration2": {
+      "description": "Common collector settings",
+      "type": "object",
+      "properties": {
+        "disabled": {
+          "type": "boolean"
+        },
+        "items": {
+          "description": "execution tasks",
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Run"
           }
         }
       }
@@ -351,6 +397,46 @@
             "string",
             "null"
           ]
+        }
+      }
+    },
+    "Run": {
+      "type": "object",
+      "required": [
+        "command"
+      ],
+      "properties": {
+        "args": {
+          "description": "The arguments",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cleanEnv": {
+          "type": "boolean"
+        },
+        "command": {
+          "description": "The binary to call",
+          "type": "string"
+        },
+        "discovery": {
+          "description": "The Home Assistant discovery section",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Discovery"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "envs": {
+          "description": "The environment variables",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       }
     },

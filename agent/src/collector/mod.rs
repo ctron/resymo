@@ -8,7 +8,6 @@ use actix_web::{body::BoxBody, HttpResponse, ResponseError};
 use async_trait::async_trait;
 use homeassistant_agent::model::Discovery;
 use serde_json::json;
-use std::collections::{BTreeMap, HashMap};
 
 #[derive(Clone, Debug)]
 pub struct ValueDescriptor {
@@ -41,53 +40,5 @@ impl ResponseError for Error {
                 "message": err
             })),
         }
-    }
-}
-
-#[derive(Default)]
-pub struct Manager {
-    pub collectors: HashMap<String, Box<dyn Collector>>,
-}
-
-impl Manager {
-    pub fn new() -> Self {
-        Self {
-            collectors: Default::default(),
-        }
-    }
-
-    pub fn register<N: Into<String>, C: Collector + 'static>(
-        mut self,
-        name: N,
-        collector: C,
-    ) -> Self {
-        self.collectors.insert(name.into(), Box::new(collector));
-        self
-    }
-
-    pub async fn collect_one(&self, name: &str) -> Result<Option<serde_json::Value>, Error> {
-        Ok(match self.collectors.get(name) {
-            Some(collector) => Some(
-                collector
-                    .collect()
-                    .await
-                    .map_err(|err| Error::Collector(err.to_string()))?,
-            ),
-            None => None,
-        })
-    }
-
-    pub async fn collect_all(&self) -> Result<BTreeMap<String, serde_json::Value>, Error> {
-        let mut result = BTreeMap::new();
-        for (name, collector) in &self.collectors {
-            result.insert(
-                name.to_string(),
-                collector
-                    .collect()
-                    .await
-                    .map_err(|err| Error::Collector(err.to_string()))?,
-            );
-        }
-        Ok(result)
     }
 }

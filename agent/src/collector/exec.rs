@@ -98,7 +98,7 @@ impl Inner {
 
         cmd.kill_on_drop(true)
             .args(self.config.args.clone())
-            .envs(self.config.envs.clone().into_iter());
+            .envs(self.config.envs.clone());
 
         let output = cmd.output().await?;
         if !output.status.success() {
@@ -157,7 +157,7 @@ impl Collector {
                 for discovery in &mut discovery {
                     if discovery.unique_id.is_none() {
                         let name = if auto == 0 {
-                            format!("{name}")
+                            name.to_string()
                         } else {
                             // start suffixing items with a counter, better provide a unique_id
                             format!("{name}_{auto}")

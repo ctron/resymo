@@ -1,10 +1,12 @@
-use crate::collector::Manager;
+use crate::manager::Manager;
 use actix_web::web::Bytes;
 use gethostname::gethostname;
 use homeassistant_agent::{
     connector::{Client, Connector, ConnectorHandler, ConnectorOptions},
     model::{Component, Device, DeviceId, Discovery},
 };
+use rumqttc::QoS;
+use std::borrow::Cow;
 use std::{sync::Arc, time::Duration};
 use tokio::{sync::oneshot, time::MissedTickBehavior};
 
@@ -88,13 +90,44 @@ impl ConnectorHandler for ResymoUplink {
         Ok(())
     }
 
-    async fn message(&mut self, _topic: String, _payload: Bytes) -> Result<(), Self::Error> {
+    async fn message(&mut self, topic: String, payload: Bytes) -> Result<(), Self::Error> {
+        match topic.split('/').collect::<Vec<_>>().as_slice() {
+            [base, device_id, name, "command"]
+                if base == &self.options.base && device_id == &self.options.device_id =>
+            {
+                let payload = String::from_utf8_lossy(&payload);
+                self.handle_command(name, payload).await;
+            }
+            _ => {
+                log::warn!("received message for unknown topic: {topic}");
+            }
+        }
+
         Ok(())
     }
 }
 
 impl ResymoUplink {
+    fn command_topic(&self, name: &str) -> String {
+        format!(
+            "{}/{}/{name}/command",
+            self.options.base, self.options.device_id
+        )
+    }
+
     async fn subscribe(&self) -> Result<(), Error> {
+        for (name, command) in &self.manager.commands {
+            if command.describe_ha().is_none() {
+                continue;
+            }
+
+            let command_topic = self.command_topic(name);
+
+            self.client
+                .subscribe(command_topic, QoS::AtMostOnce)
+                .await?;
+        }
+
         Ok(())
     }
 
@@ -136,7 +169,58 @@ impl ResymoUplink {
             }
         }
 
+        for (name, command) in &self.manager.commands {
+            let state_topic = format!(
+                "{}/{}/{name}/state",
+                self.options.base, self.options.device_id
+            );
+            let command_topic = self.command_topic(name);
+
+            let entity = command.describe_ha();
+
+            if let Some(entity) = entity {
+                let Some(unique_id) = entity
+                    .unique_id
+                    .as_ref()
+                    .map(|id| format!("{}_{name}_{id}", self.options.device_id))
+                else {
+                    continue;
+                };
+
+                let entity = Discovery {
+                    state_topic: Some(state_topic.clone()),
+                    command_topic: Some(command_topic.clone()),
+                    device: Some(device.clone()),
+                    unique_id: Some(unique_id.clone()),
+                    ..(entity.clone())
+                };
+
+                let id = DeviceId::new(unique_id.clone(), Component::Button);
+                self.client.announce(&id, &entity).await?;
+            }
+        }
+
         Ok(())
+    }
+
+    async fn handle_command(&mut self, name: &str, payload: Cow<'_, str>) {
+        let Some(command) = self.manager.commands.get(name) else {
+            log::warn!("Received trigger for unknown command: {name}");
+            return;
+        };
+
+        command
+            .start(
+                payload,
+                Box::new(|result| {
+                    if result.is_ok() {
+                        log::info!("completed: ok");
+                    } else {
+                        log::info!("completed: failed");
+                    }
+                }),
+            )
+            .await;
     }
 }
 
