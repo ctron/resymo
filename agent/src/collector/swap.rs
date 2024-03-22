@@ -12,6 +12,8 @@ pub struct Status {
     pub free: u64,
     pub total: u64,
     pub used: u64,
+    /// used / total
+    pub percentage: f64,
 }
 
 #[async_trait]
@@ -24,6 +26,7 @@ impl super::Collector for Collector {
             free: system.free_swap(),
             total: system.total_swap(),
             used: system.used_swap(),
+            percentage: system.used_swap() as f64 / system.total_swap() as f64,
         };
 
         Ok(serde_json::to_value(status)?)
@@ -56,6 +59,14 @@ impl super::Collector for Collector {
                 value_template: Some("{{ value_json.used }}".to_string()),
                 device_class: Some(SensorClass::DataSize.as_ref().to_string()),
                 unit_of_measurement: Some("B".to_string()),
+                ..Default::default()
+            },
+            Discovery {
+                unique_id: Some("percentage".to_string()),
+                name: Some("Used swap space (%)".to_string()),
+                state_class: Some(StateClass::Measurement),
+                value_template: Some(r#"{{{{ value_json.percentage * 100 }}}}"#.to_string()),
+                unit_of_measurement: Some("%".to_string()),
                 ..Default::default()
             },
         ]
