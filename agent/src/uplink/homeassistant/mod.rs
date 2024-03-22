@@ -108,6 +108,13 @@ impl ConnectorHandler for ResymoUplink {
 }
 
 impl ResymoUplink {
+    fn state_topic(&self, name: &str) -> String {
+        format!(
+            "{}/{}/{name}/state",
+            self.options.base, self.options.device_id
+        )
+    }
+
     fn command_topic(&self, name: &str) -> String {
         format!(
             "{}/{}/{name}/command",
@@ -141,11 +148,7 @@ impl ResymoUplink {
         };
 
         for (name, collector) in &self.manager.collectors {
-            let state_topic = format!(
-                "{}/{}/{name}/state",
-                self.options.base, self.options.device_id
-            );
-
+            let state_topic = self.state_topic(name);
             let entities = collector.describe_ha();
 
             for entity in entities {
@@ -170,15 +173,12 @@ impl ResymoUplink {
         }
 
         for (name, command) in &self.manager.commands {
-            let state_topic = format!(
-                "{}/{}/{name}/state",
-                self.options.base, self.options.device_id
-            );
-            let command_topic = self.command_topic(name);
-
             let entity = command.describe_ha();
 
             if let Some(entity) = entity {
+                let command_topic = self.command_topic(name);
+                let state_topic = self.state_topic(name);
+
                 let Some(unique_id) = entity
                     .unique_id
                     .as_ref()
@@ -188,7 +188,6 @@ impl ResymoUplink {
                 };
 
                 let entity = Discovery {
-                    state_topic: Some(state_topic.clone()),
                     command_topic: Some(command_topic.clone()),
                     device: Some(device.clone()),
                     unique_id: Some(unique_id.clone()),
@@ -196,6 +195,20 @@ impl ResymoUplink {
                 };
 
                 let id = DeviceId::new(unique_id.clone(), Component::Button);
+                self.client.announce(&id, &entity).await?;
+
+                // state entity
+
+                let unique_id = format!("{unique_id}_running");
+
+                let entity = Discovery {
+                    state_topic: Some(state_topic.clone()),
+                    device: Some(device.clone()),
+                    unique_id: Some(unique_id.clone()),
+                    ..(entity.clone())
+                };
+
+                let id = DeviceId::new(unique_id, Component::Button);
                 self.client.announce(&id, &entity).await?;
             }
         }
@@ -209,15 +222,24 @@ impl ResymoUplink {
             return;
         };
 
+        let state_topic = self.state_topic(name);
+        let _ = self.client.update_state(state_topic.clone(), b"").await;
+
+        let client = self.client.clone();
+
         command
             .start(
                 payload,
-                Box::new(|result| {
-                    if result.is_ok() {
-                        log::info!("completed: ok");
-                    } else {
-                        log::info!("completed: failed");
-                    }
+                Box::new(move |result| {
+                    Box::pin(async move {
+                        let _ = client.update_state(state_topic, b"").await;
+
+                        if result.is_ok() {
+                            log::info!("completed: ok");
+                        } else {
+                            log::info!("completed: failed");
+                        }
+                    })
                 }),
             )
             .await;
@@ -277,10 +299,9 @@ impl Runner {
 pub async fn run(options: Options, manager: Arc<Manager>) -> anyhow::Result<()> {
     let Options { options, connector } = options;
 
-    let device_id = match options.device_id {
-        Some(device_id) => device_id,
-        None => gethostname().to_string_lossy().to_string(),
-    };
+    let device_id = options
+        .device_id
+        .unwrap_or_else(|| gethostname().to_string_lossy().to_string());
 
     let options = RunnerOptions {
         device_id,

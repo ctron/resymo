@@ -1,3 +1,4 @@
+use crate::command::CallbackFn;
 use crate::config::CommonCommand;
 use crate::utils::is_default;
 use async_trait::async_trait;
@@ -85,7 +86,7 @@ impl Command {
 
 #[async_trait(?Send)]
 impl super::Command for Command {
-    async fn start(&self, payload: Cow<'_, str>, callback: Box<dyn Fn(Result<(), ()>) + Send>) {
+    async fn start(&self, payload: Cow<'_, str>, callback: Box<CallbackFn>) {
         log::info!("running command: {payload}");
 
         let mut cmd = tokio::process::Command::new(&self.config.command);
@@ -107,7 +108,7 @@ impl super::Command for Command {
                 }
             };
 
-            (callback)(result);
+            (callback)(result).await;
         });
     }
 
