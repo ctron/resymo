@@ -165,6 +165,11 @@ impl Collector {
                         discovery.unique_id = Some(name);
                         auto += 1;
                     }
+
+                    if discovery.value_template.is_none() {
+                        // default to stdout
+                        discovery.value_template = Some("{{ value_json.stdout }}".into());
+                    }
                 }
 
                 let collector = Self {
