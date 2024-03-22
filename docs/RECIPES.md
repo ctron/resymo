@@ -13,7 +13,7 @@ collectors:
         args:
           - -c
           - |
-            apt --upgradable | wc -l
+            apt list --upgradable | wc -l
         discovery:
           - name: Pending updates
             state_class: measurement
