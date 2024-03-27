@@ -22,11 +22,16 @@ impl super::Collector for Collector {
         let mut system = System::new();
         system.refresh_memory();
 
+        let percentage = match system.total_swap() {
+            0 => 0f64,
+            n => system.used_swap() as f64 / n as f64,
+        };
+
         let status = Status {
             free: system.free_swap(),
             total: system.total_swap(),
             used: system.used_swap(),
-            percentage: system.used_swap() as f64 / system.total_swap() as f64,
+            percentage,
         };
 
         Ok(serde_json::to_value(status)?)

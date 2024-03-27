@@ -16,12 +16,16 @@ impl super::Collector for Collector {
 
         let mut result = HashMap::new();
         for disk in disks.list() {
+            let usage = match disk.total_space() {
+                0 => 0f64,
+                n => 1f64 - disk.available_space() as f64 / n as f64,
+            };
             result.insert(
                 disk.name().to_string_lossy().to_string(),
                 DiskStatus {
                     free: disk.available_space(),
                     total: disk.total_space(),
-                    usage: 1f64 - (disk.available_space() as f64) / (disk.total_space() as f64),
+                    usage,
                 },
             );
         }
