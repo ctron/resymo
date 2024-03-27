@@ -205,10 +205,11 @@ impl ResymoUplink {
                     state_topic: Some(state_topic.clone()),
                     device: Some(device.clone()),
                     unique_id: Some(unique_id.clone()),
+                    value_template: None,
                     ..(entity.clone())
                 };
 
-                let id = DeviceId::new(unique_id, Component::Button);
+                let id = DeviceId::new(unique_id, Component::BinarySensor);
                 self.client.announce(&id, &entity).await?;
             }
         }
@@ -223,7 +224,7 @@ impl ResymoUplink {
         };
 
         let state_topic = self.state_topic(name);
-        let _ = self.client.update_state(state_topic.clone(), b"").await;
+        let _ = self.client.update_state(state_topic.clone(), b"ON").await;
 
         let client = self.client.clone();
 
@@ -232,7 +233,7 @@ impl ResymoUplink {
                 payload,
                 Box::new(move |result| {
                     Box::pin(async move {
-                        let _ = client.update_state(state_topic, b"").await;
+                        let _ = client.update_state(state_topic, b"OFF").await;
 
                         if result.is_ok() {
                             log::info!("completed: ok");
