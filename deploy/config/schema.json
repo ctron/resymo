@@ -42,6 +42,43 @@
     }
   },
   "definitions": {
+    "Availability": {
+      "type": "object",
+      "required": [
+        "topic"
+      ],
+      "properties": {
+        "payload_available": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "payload_not_available": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "topic": {
+          "type": "string"
+        },
+        "value_template": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "AvailabilityMode": {
+      "type": "string",
+      "enum": [
+        "all",
+        "any",
+        "latest"
+      ]
+    },
     "Collectors": {
       "description": "Collector configurations",
       "type": "object",
@@ -257,6 +294,21 @@
       "description": "Discovery message",
       "type": "object",
       "properties": {
+        "availability": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Availability"
+          }
+        },
+        "availability_mode": {
+          "$ref": "#/definitions/AvailabilityMode"
+        },
+        "command_template": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "command_topic": {
           "type": [
             "string",
@@ -278,6 +330,12 @@
           "default": null,
           "type": [
             "string",
+            "null"
+          ]
+        },
+        "enabled_by_default": {
+          "type": [
+            "boolean",
             "null"
           ]
         },

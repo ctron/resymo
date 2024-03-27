@@ -898,9 +898,9 @@ checksum = "d231dfb89cfffdbc30e7fc41579ed6066ad03abda9e567ccafae602b97ec5024"
 
 [[package]]
 name = "homeassistant-agent"
-version = "0.2.0-alpha.6"
+version = "0.2.0-alpha.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce69cf0df7b98e5139d3ba61d5c4f85b0fa8167972460e7c8f2765277e298d75"
+checksum = "b4c7927078a24746b903b3cde4e44da583b1034e978b006f02de8b9dd9cb9243"
 dependencies = [
  "bytes",
  "futures-util",

@@ -65,7 +65,7 @@ impl super::Collector for Collector {
                 unique_id: Some("percentage".to_string()),
                 name: Some("Used swap space (%)".to_string()),
                 state_class: Some(StateClass::Measurement),
-                value_template: Some(r#"{{{{ value_json.percentage * 100 }}}}"#.to_string()),
+                value_template: Some(r#"{{ value_json.percentage * 100 }}"#.to_string()),
                 unit_of_measurement: Some("%".to_string()),
                 ..Default::default()
             },

@@ -1,20 +1,26 @@
+mod discovery;
+
 use crate::manager::Manager;
+use crate::uplink::homeassistant::discovery::MixinAvailability;
 use actix_web::web::Bytes;
 use gethostname::gethostname;
 use homeassistant_agent::{
-    connector::{Client, Connector, ConnectorHandler, ConnectorOptions},
+    connector::{AvailabilityOptions, Client, Connector, ConnectorHandler, ConnectorOptions},
     model::{Component, Device, DeviceId, Discovery},
 };
 use rumqttc::QoS;
-use std::borrow::Cow;
-use std::{sync::Arc, time::Duration};
+use std::{borrow::Cow, sync::Arc, time::Duration};
 use tokio::{sync::oneshot, time::MissedTickBehavior};
+
+pub const PAYLOAD_RUNNING: &str = "ON";
+pub const PAYLOAD_STOPPED: &str = "OFF";
 
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct UplinkOptions {
     /// The device ID. Will default to the value of the `HOSTNAME` environment variable.
     pub device_id: Option<String>,
+
     /// Base topic
     #[serde(default = "default_base")]
     pub base: String,
@@ -77,10 +83,12 @@ impl ConnectorHandler for ResymoUplink {
 
     async fn connected(&mut self, state: bool) -> Result<(), Self::Error> {
         log::info!("Connected: {state}");
+
         if state {
             self.subscribe().await?;
             self.announce().await?;
         }
+
         Ok(())
     }
 
@@ -93,7 +101,7 @@ impl ConnectorHandler for ResymoUplink {
     async fn message(&mut self, topic: String, payload: Bytes) -> Result<(), Self::Error> {
         match topic.split('/').collect::<Vec<_>>().as_slice() {
             [base, device_id, name, "command"]
-                if base == &self.options.base && device_id == &self.options.device_id =>
+                if format!("{base}/{device_id}") == self.options.base =>
             {
                 let payload = String::from_utf8_lossy(&payload);
                 self.handle_command(name, payload).await;
@@ -109,17 +117,11 @@ impl ConnectorHandler for ResymoUplink {
 
 impl ResymoUplink {
     fn state_topic(&self, name: &str) -> String {
-        format!(
-            "{}/{}/{name}/state",
-            self.options.base, self.options.device_id
-        )
+        format!("{base}/{name}/state", base = self.options.base)
     }
 
     fn command_topic(&self, name: &str) -> String {
-        format!(
-            "{}/{}/{name}/command",
-            self.options.base, self.options.device_id
-        )
+        format!("{base}/{name}/command", base = self.options.base)
     }
 
     async fn subscribe(&self) -> Result<(), Error> {
@@ -167,6 +169,9 @@ impl ResymoUplink {
                     ..(entity.clone())
                 };
 
+                let base = format!("{base}/{name}", base = self.options.base);
+                let entity = entity.mixin_availability(&base, &self.options.availability_topic);
+
                 let id = DeviceId::new(unique_id.clone(), Component::Sensor);
                 self.client.announce(&id, &entity).await?;
             }
@@ -182,7 +187,7 @@ impl ResymoUplink {
                 let Some(unique_id) = entity
                     .unique_id
                     .as_ref()
-                    .map(|id| format!("{}_{name}_{id}", self.options.device_id))
+                    .map(|id| format!("{}_{id}", self.options.device_id))
                 else {
                     continue;
                 };
@@ -193,6 +198,11 @@ impl ResymoUplink {
                     unique_id: Some(unique_id.clone()),
                     ..(entity.clone())
                 };
+
+                let entity = entity.mixin_availability(
+                    &format!("{base}/{name}", base = self.options.base),
+                    &self.options.availability_topic,
+                );
 
                 let id = DeviceId::new(unique_id.clone(), Component::Button);
                 self.client.announce(&id, &entity).await?;
@@ -205,12 +215,26 @@ impl ResymoUplink {
                     state_topic: Some(state_topic.clone()),
                     device: Some(device.clone()),
                     unique_id: Some(unique_id.clone()),
+                    device_class: None,
                     value_template: None,
+                    command_topic: None,
+                    availability: vec![],
                     ..(entity.clone())
                 };
 
+                let entity =
+                    entity.mixin_availability(&self.options.base, &self.options.availability_topic);
+
                 let id = DeviceId::new(unique_id, Component::BinarySensor);
                 self.client.announce(&id, &entity).await?;
+
+                // update initial state
+
+                // FIXME: we might need to check the actual state
+
+                self.client
+                    .update_state(self.state_topic(name), PAYLOAD_STOPPED)
+                    .await?;
             }
         }
 
@@ -224,7 +248,10 @@ impl ResymoUplink {
         };
 
         let state_topic = self.state_topic(name);
-        let _ = self.client.update_state(state_topic.clone(), b"ON").await;
+        let _ = self
+            .client
+            .update_state(state_topic.clone(), PAYLOAD_RUNNING)
+            .await;
 
         let client = self.client.clone();
 
@@ -233,7 +260,7 @@ impl ResymoUplink {
                 payload,
                 Box::new(move |result| {
                     Box::pin(async move {
-                        let _ = client.update_state(state_topic, b"OFF").await;
+                        let _ = client.update_state(state_topic, PAYLOAD_STOPPED).await;
 
                         if result.is_ok() {
                             log::info!("completed: ok");
@@ -251,6 +278,7 @@ impl ResymoUplink {
 struct RunnerOptions {
     device_id: String,
     base: String,
+    availability_topic: String,
 }
 
 struct Runner {
@@ -283,10 +311,7 @@ impl Runner {
 
     async fn collect(&self) -> anyhow::Result<()> {
         for (collector, state) in self.manager.collect_all().await? {
-            let topic = format!(
-                "{}/{}/{collector}/state",
-                self.options.base, self.options.device_id
-            );
+            let topic = format!("{base}/{collector}/state", base = self.options.base);
 
             self.client
                 .update_state(topic, serde_json::to_vec(&state)?)
@@ -304,14 +329,20 @@ pub async fn run(options: Options, manager: Arc<Manager>) -> anyhow::Result<()> 
         .device_id
         .unwrap_or_else(|| gethostname().to_string_lossy().to_string());
 
+    let availability_topic = format!("{base}/{device_id}/availability", base = options.base);
+    let availability = AvailabilityOptions::new(availability_topic.clone());
+
+    let base = format!("{base}/{device_id}", base = options.base);
     let options = RunnerOptions {
         device_id,
-        base: options.base,
+        base,
+        availability_topic,
     };
 
     let connector = Connector::new(connector, |client| {
         ResymoUplink::new(client, manager, options)
-    });
+    })
+    .availability(availability);
     connector.run().await?;
 
     Ok(())

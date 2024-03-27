@@ -1,11 +1,12 @@
-use crate::command::CallbackFn;
-use crate::config::CommonCommand;
-use crate::utils::is_default;
+use crate::{
+    command::CallbackFn,
+    config::CommonCommand,
+    uplink::homeassistant::{PAYLOAD_RUNNING, PAYLOAD_STOPPED},
+    utils::is_default,
+};
 use async_trait::async_trait;
-use homeassistant_agent::model::Discovery;
-use std::borrow::Cow;
-use std::collections::HashMap;
-use std::ops::Deref;
+use homeassistant_agent::model::{Availability, Discovery};
+use std::{borrow::Cow, collections::HashMap, ops::Deref};
 
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
@@ -71,10 +72,10 @@ impl Command {
                 discovery.unique_id = Some(name.into());
             }
 
-            if discovery.value_template.is_none() {
-                // default to stdout
-                discovery.value_template = Some("{{ value_json.stdout }}".into());
-            }
+            discovery.availability = vec![Availability::new("state")
+                .payload_available(PAYLOAD_STOPPED)
+                .payload_not_available(PAYLOAD_RUNNING)];
+
             Some(discovery)
         } else {
             None
