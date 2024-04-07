@@ -48,7 +48,8 @@ fn init_logger(cli: &Cli) {
         // increase verbosity
         (0, false) => "warn,resymo_agent=info",
         (1, false) => "info,resymo_agent=debug",
-        (2, false) => "debug,resymo_agent=trace",
+        (2, false) => "debug",
+        (3, false) => "debug,resymo_agent=trace",
         (_, false) => "trace",
     };
 
