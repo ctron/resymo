@@ -325,9 +325,7 @@ impl Runner {
 pub async fn run(options: Options, manager: Arc<Manager>) -> anyhow::Result<()> {
     let Options { options, connector } = options;
 
-    let device_id = options
-        .device_id
-        .unwrap_or_else(|| gethostname().to_string_lossy().to_string());
+    let device_id = options.device_id.unwrap_or_else(default_device_id);
 
     let availability_topic = format!("{base}/{device_id}/availability", base = options.base);
     let availability = AvailabilityOptions::new(availability_topic.clone());
@@ -346,4 +344,26 @@ pub async fn run(options: Options, manager: Arc<Manager>) -> anyhow::Result<()> 
     connector.run().await?;
 
     Ok(())
+}
+
+// generate a default device id
+fn default_device_id() -> String {
+    scrub_device_id(&gethostname().to_string_lossy())
+}
+
+fn scrub_device_id(device_id: &str) -> String {
+    device_id.replace(
+        |c: char| !(c.is_ascii_alphanumeric() || c == '-' || c == '_'),
+        "_",
+    )
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_scrub_device_id() {
+        assert_eq!(scrub_device_id("foo.bar.baz"), "foo_bar_baz")
+    }
 }
